@@ -38,6 +38,13 @@
             name="HTML"
             priority="normal">
       </content-type>
+      <content-type
+            base-type="org.eclipse.core.runtime.text"
+            file-extensions="cpp,c,h,cxx,cc,hxx,hpp"
+            id="org.eclipse.lsp4e.languages.cpp"
+            name="C/C++"
+            priority="normal">
+      </content-type>
    </extension>
    <extension
          point="org.eclipse.ui.startup">
@@ -61,6 +68,10 @@
       </editorContentTypeBinding>
       <editorContentTypeBinding
             contentTypeId="org.eclipse.lsp4e.languages.json"
+            editorId="org.eclipse.ui.genericeditor.GenericEditor">
+      </editorContentTypeBinding>
+      <editorContentTypeBinding
+            contentTypeId="org.eclipse.lsp4e.languages.cpp"
             editorId="org.eclipse.ui.genericeditor.GenericEditor">
       </editorContentTypeBinding>
    </extension>
@@ -91,6 +102,15 @@
       <contentTypeMapping
             contentType="org.eclipse.lsp4e.languages.html"
             id="org.eclipse.lsp4e.languages.html">
+      </contentTypeMapping>
+      <server
+            class="org.eclipse.lsp4e.languages.CPPLanguageServer"
+            id="org.eclipse.lsp4e.languages.cpp"
+            label="C/C++ Language Server">
+      </server>
+      <contentTypeMapping
+            contentType="org.eclipse.lsp4e.languages.cpp"
+            id="org.eclipse.lsp4e.languages.cpp">
       </contentTypeMapping>
    </extension>
 </plugin>
