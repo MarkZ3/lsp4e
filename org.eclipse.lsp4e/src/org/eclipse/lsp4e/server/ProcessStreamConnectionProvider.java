@@ -96,7 +96,9 @@ public class ProcessStreamConnectionProvider implements StreamConnectionProvider
 		final int prime = 31;
 		int result = 1;
 		for (String s : this.getCommands()) {
-			result = result * prime + s.hashCode();
+			if (s != null) {
+				result = result * prime + s.hashCode();
+			}
 		}
 		return result ^ this.getWorkingDirectory().hashCode();
 	}
