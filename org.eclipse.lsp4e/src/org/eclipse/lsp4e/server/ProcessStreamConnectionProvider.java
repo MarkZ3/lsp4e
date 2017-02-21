@@ -56,7 +56,9 @@ public class ProcessStreamConnectionProvider implements StreamConnectionProvider
 
 	@Override
 	public void stop() {
-		process.destroy();
+		if (process != null) {
+			process.destroy();
+		}
 	}
 
 	protected List<String> getCommands() {
