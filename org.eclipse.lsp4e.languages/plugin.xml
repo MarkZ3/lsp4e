@@ -103,14 +103,5 @@
             contentType="org.eclipse.lsp4e.languages.html"
             id="org.eclipse.lsp4e.languages.html">
       </contentTypeMapping>
-      <server
-            class="org.eclipse.lsp4e.languages.CPPLanguageServer"
-            id="org.eclipse.lsp4e.languages.cpp"
-            label="C/C++ Language Server">
-      </server>
-      <contentTypeMapping
-            contentType="org.eclipse.lsp4e.languages.cpp"
-            id="org.eclipse.lsp4e.languages.cpp">
-      </contentTypeMapping>
    </extension>
 </plugin>
