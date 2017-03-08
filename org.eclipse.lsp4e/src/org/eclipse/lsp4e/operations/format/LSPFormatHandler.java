@@ -18,6 +18,8 @@ import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.commands.IHandler;
+import org.eclipse.jdt.annotation.NonNull;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.text.TextSelection;
@@ -33,6 +35,7 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextEdit;
+import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPart;
@@ -51,21 +54,25 @@ public class LSPFormatHandler extends AbstractHandler implements IHandler {
 					LSPEclipseUtils.getDocument(textEditor),
 			        (capabilities) -> supportFormatting(capabilities));
 			if (info != null) {
-				ISelection sel = textEditor.getSelectionProvider().getSelection();
-				if (sel instanceof TextSelection) {
-					TextSelection textSelection = (TextSelection) sel;
-					try {
-						CompletableFuture<List<? extends TextEdit>> formatter = format(info, textSelection);
-						final Shell shell = HandlerUtil.getActiveShell(event);
-						formatter.thenAccept((List<? extends TextEdit> t) -> {
-							shell.getDisplay().asyncExec(() -> {
-								LSPEclipseUtils.applyEdits(info.getDocument(), t);
+				@Nullable
+				LanguageServer languageClient = info.getLanguageClient();
+				if (languageClient != null) {
+					ISelection sel = textEditor.getSelectionProvider().getSelection();
+					if (sel instanceof TextSelection) {
+						TextSelection textSelection = (TextSelection) sel;
+						try {
+							CompletableFuture<List<? extends TextEdit>> formatter = format(info, languageClient, textSelection);
+							final Shell shell = HandlerUtil.getActiveShell(event);
+							formatter.thenAccept((List<? extends TextEdit> t) -> {
+								shell.getDisplay().asyncExec(() -> {
+									LSPEclipseUtils.applyEdits(info.getDocument(), t);
+								});
 							});
-						});
-					} catch (BadLocationException e) {
-						// TODO
-						e.printStackTrace();
-						return null;
+						} catch (BadLocationException e) {
+							// TODO
+							e.printStackTrace();
+							return null;
+						}
 					}
 				}
 			}
@@ -73,10 +80,11 @@ public class LSPFormatHandler extends AbstractHandler implements IHandler {
 		return null;
 	}
 
-	private CompletableFuture<List<? extends TextEdit>> format(LSPDocumentInfo info, TextSelection textSelection)
+	private CompletableFuture<List<? extends TextEdit>> format(LSPDocumentInfo info, @NonNull LanguageServer languageClient,  TextSelection textSelection)
 	        throws BadLocationException {
 		TextDocumentIdentifier docId = new TextDocumentIdentifier(info.getFileUri().toString());
 		ServerCapabilities capabilities = info.getCapabilites();
+
 		// use range formatting if standard formatting is not supported or text is selected
 		if (capabilities != null && Boolean.TRUE.equals(capabilities.getDocumentRangeFormattingProvider())
 		        && (capabilities.getDocumentFormattingProvider() == null
@@ -90,13 +98,13 @@ public class LSPFormatHandler extends AbstractHandler implements IHandler {
 			        fullFormat ? info.getDocument().getLength() : textSelection.getOffset() + textSelection.getLength(),
 			        info.getDocument());
 			params.setRange(new Range(start, end));
-			return info.getLanguageClient().getTextDocumentService().rangeFormatting(params);
+			return languageClient.getTextDocumentService().rangeFormatting(params);
 		}
 
 		DocumentFormattingParams params = new DocumentFormattingParams();
 		params.setTextDocument(docId);
 		params.setOptions(new FormattingOptions());
-		return info.getLanguageClient().getTextDocumentService().formatting(params);
+		return languageClient.getTextDocumentService().formatting(params);
 	}
 
 	@Override

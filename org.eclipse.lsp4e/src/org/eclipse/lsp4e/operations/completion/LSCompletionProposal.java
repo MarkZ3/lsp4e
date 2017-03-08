@@ -19,6 +19,7 @@ import java.util.concurrent.TimeoutException;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jdt.annotation.NonNull;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jface.text.AbstractReusableInformationControlCreator;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.DefaultInformationControl;
@@ -54,6 +55,7 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.TextEdit;
+import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
@@ -152,8 +154,10 @@ public class LSCompletionProposal
 		ServerCapabilities capabilities = info.getCapabilites();
 		if (capabilities != null) {
 			CompletionOptions options = capabilities.getCompletionProvider();
-			if (options != null && Boolean.TRUE.equals(options.getResolveProvider())) {
-				CompletableFuture<CompletionItem> resolvedItem = info.getLanguageClient().getTextDocumentService()
+			@Nullable
+			LanguageServer languageClient = info == null ? null : info.getLanguageClient();
+			if (options != null && Boolean.TRUE.equals(options.getResolveProvider()) && languageClient != null) {
+				CompletableFuture<CompletionItem> resolvedItem = languageClient.getTextDocumentService()
 						.resolveCompletionItem(item);
 				try {
 					updateCompletionItem(resolvedItem.get(500, TimeUnit.MILLISECONDS));

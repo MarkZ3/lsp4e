@@ -19,6 +19,7 @@ import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocumentListener;
 import org.eclipse.jface.viewers.ITreeContentProvider;
@@ -30,14 +31,15 @@ import org.eclipse.lsp4e.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.lsp4j.DocumentSymbolParams;
 import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.ui.IMemento;
 import org.eclipse.ui.navigator.ICommonContentExtensionSite;
 import org.eclipse.ui.navigator.ICommonContentProvider;
 
 public class LSSymbolsContentProvider implements ICommonContentProvider, ITreeContentProvider, IDocumentListener, IResourceChangeListener {
-	
+
 	public static final Object COMPUTING = new Object();
-	
+
 	private TreeViewer viewer;
 	private Throwable lastError;
 	private LSPDocumentInfo info;
@@ -101,9 +103,15 @@ public class LSSymbolsContentProvider implements ICommonContentProvider, ITreeCo
 		if (symbols != null && !symbols.isDone()) {
 			symbols.cancel(true);
 		}
+		@Nullable
+		LanguageServer languageClient = info.getLanguageClient();
+		if (languageClient == null) {
+			return;
+		}
+
 		lastError = null;
 		DocumentSymbolParams params = new DocumentSymbolParams(new TextDocumentIdentifier(info.getFileUri().toString()));
-		symbols = info.getLanguageClient().getTextDocumentService().documentSymbol(params);
+		symbols = languageClient.getTextDocumentService().documentSymbol(params);
 
 		symbols.thenAccept((List<? extends SymbolInformation> t) -> {
 			symbolsModel.update(t);
@@ -137,7 +145,7 @@ public class LSSymbolsContentProvider implements ICommonContentProvider, ITreeCo
 					if (delta.getResource().equals(this.resource)) {
 						viewer.getControl().getDisplay().asyncExec(() -> {
 							if (viewer instanceof StructuredViewer) {
-								((TreeViewer) viewer).refresh(true);
+								viewer.refresh(true);
 							}
 						});
 					}

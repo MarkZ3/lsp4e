@@ -22,6 +22,7 @@ import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jdt.annotation.NonNull;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
@@ -37,6 +38,7 @@ import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.TextDocumentPositionParams;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
+import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.xtext.xbase.lib.Pair;
@@ -67,9 +69,11 @@ public class LSContentAssistProcessor implements IContentAssistProcessor {
 		ICompletionProposal[] res = new ICompletionProposal[0];
 		CompletableFuture<Either<List<CompletionItem>, CompletionList>> request = null;
 		try {
-			if (info != null) {
+			@Nullable
+			LanguageServer languageClient = info == null ? null : info.getLanguageClient();
+			if (languageClient != null) {
 				TextDocumentPositionParams param = LSPEclipseUtils.toTextDocumentPosistionParams(info.getFileUri(), offset, info.getDocument());
-				request = info.getLanguageClient().getTextDocumentService().completion(param);
+				request = languageClient.getTextDocumentService().completion(param);
 				res = toProposals(offset, request.get());
 			}
 		} catch (Exception ex) {

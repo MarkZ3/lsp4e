@@ -29,6 +29,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextSelection;
@@ -43,6 +44,7 @@ import org.eclipse.lsp4j.RenameParams;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.WorkspaceEdit;
+import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
@@ -69,8 +71,12 @@ public class LSPRenameHandler extends AbstractHandler implements IHandler {
 						identifier.setUri(info.getFileUri().toString());
 						params.setTextDocument(identifier);
 						params.setNewName(askNewName());
-						CompletableFuture<WorkspaceEdit> rename = info.getLanguageClient().getTextDocumentService().rename(params);
-						rename.thenAccept((WorkspaceEdit t) -> apply(t));
+						@Nullable
+						LanguageServer languageClient = info.getLanguageClient();
+						if (languageClient != null) {
+							CompletableFuture<WorkspaceEdit> rename = languageClient.getTextDocumentService().rename(params);
+							rename.thenAccept((WorkspaceEdit t) -> apply(t));
+						}
 					} catch (BadLocationException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();

@@ -18,6 +18,7 @@ import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.commands.IHandler;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.text.TextSelection;
@@ -30,6 +31,7 @@ import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.ReferenceContext;
 import org.eclipse.lsp4j.ReferenceParams;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.search.ui.NewSearchUI;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPart;
@@ -49,20 +51,24 @@ public class LSFindReferences extends AbstractHandler implements IHandler {
 					(capabilities) -> Boolean.TRUE.equals(capabilities.getReferencesProvider()));
 
 			if (info != null) {
-				ISelection sel = ((AbstractTextEditor) part).getSelectionProvider().getSelection();
+				@Nullable
+				LanguageServer languageClient = info.getLanguageClient();
+				if (languageClient != null) {
+					ISelection sel = ((AbstractTextEditor) part).getSelectionProvider().getSelection();
 
-				if (sel instanceof TextSelection) {
-					try {
-						ReferenceParams params = new ReferenceParams();
-						params.setContext(new ReferenceContext(true));
-						params.setTextDocument(new TextDocumentIdentifier(info.getFileUri().toString()));
-						params.setPosition(LSPEclipseUtils.toPosition(((TextSelection) sel).getOffset(), info.getDocument()));
-						CompletableFuture<List<? extends Location>> references = info.getLanguageClient()
-						        .getTextDocumentService().references(params);
-						LSSearchResult search = new LSSearchResult(references);
-						NewSearchUI.runQueryInBackground(search.getQuery());
-					} catch (BadLocationException e) {
-						LanguageServerPlugin.logError(e);
+					if (sel instanceof TextSelection) {
+						try {
+							ReferenceParams params = new ReferenceParams();
+							params.setContext(new ReferenceContext(true));
+							params.setTextDocument(new TextDocumentIdentifier(info.getFileUri().toString()));
+							params.setPosition(LSPEclipseUtils.toPosition(((TextSelection) sel).getOffset(), info.getDocument()));
+							CompletableFuture<List<? extends Location>> references = languageClient
+									.getTextDocumentService().references(params);
+							LSSearchResult search = new LSSearchResult(references);
+							NewSearchUI.runQueryInBackground(search.getQuery());
+						} catch (BadLocationException e) {
+							LanguageServerPlugin.logError(e);
+						}
 					}
 				}
 			}

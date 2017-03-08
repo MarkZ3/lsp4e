@@ -108,7 +108,7 @@ public class LSPStreamConnectionProviderRegistry {
 					SafeRunner.run(() -> {
 						String label = extension.getAttribute(LABEL_ATTRIBUTE);
 						StreamConnectionProvider scp = (StreamConnectionProvider) extension.createExecutableExtension(CLASS_ATTRIBUTE);
-						if (scp != null && scp.isValid()) {
+						if (scp != null) {
 							servers.put(id, scp);
 							connectionsInfo.put(scp, new StreamConnectionInfo(id, label));
 						}

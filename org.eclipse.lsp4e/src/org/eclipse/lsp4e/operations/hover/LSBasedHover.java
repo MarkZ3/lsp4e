@@ -18,6 +18,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import org.eclipse.jdt.annotation.NonNull;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jface.internal.text.html.BrowserInformationControl;
 import org.eclipse.jface.resource.ColorRegistry;
 import org.eclipse.jface.resource.JFaceResources;
@@ -39,6 +40,7 @@ import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.MarkedString;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
+import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.mylyn.wikitext.core.parser.MarkupParser;
 import org.eclipse.mylyn.wikitext.markdown.core.MarkdownLanguage;
 import org.eclipse.swt.graphics.Color;
@@ -178,10 +180,14 @@ public class LSBasedHover implements ITextHover, ITextHoverExtension {
 		this.textViewer = viewer;
 		final LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(viewer, (capabilities) -> Boolean.TRUE.equals(capabilities.getHoverProvider()));
 		if (info != null) {
-			try {
-				this.hoverRequest = info.getLanguageClient().getTextDocumentService().hover(LSPEclipseUtils.toTextDocumentPosistionParams(info.getFileUri(), offset, info.getDocument()));
-			} catch (BadLocationException e) {
-				LanguageServerPlugin.logError(e);
+			@Nullable
+			LanguageServer languageClient = info.getLanguageClient();
+			if (languageClient != null) {
+				try {
+					this.hoverRequest = languageClient.getTextDocumentService().hover(LSPEclipseUtils.toTextDocumentPosistionParams(info.getFileUri(), offset, info.getDocument()));
+				} catch (BadLocationException e) {
+					LanguageServerPlugin.logError(e);
+				}
 			}
 		}
 	}

@@ -17,6 +17,7 @@ import java.util.function.BiConsumer;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jface.action.ContributionItem;
 import org.eclipse.lsp4e.LSPEclipseUtils;
 import org.eclipse.lsp4e.LanguageServiceAccessor;
@@ -25,6 +26,7 @@ import org.eclipse.lsp4e.ui.Messages;
 import org.eclipse.lsp4j.CodeLens;
 import org.eclipse.lsp4j.CodeLensParams;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
@@ -58,10 +60,15 @@ public class LSPCodeLensMenu extends ContributionItem implements IWorkbenchContr
 			item.setText(Messages.notImplemented);
 			return;
 		}
-		
+
 		item.setText(Messages.computing);
-		CodeLensParams param = new CodeLensParams(new TextDocumentIdentifier(info.getFileUri().toString()));;
-		final CompletableFuture<List<? extends CodeLens>> codeLens = info.getLanguageClient().getTextDocumentService().codeLens(param);
+		CodeLensParams param = new CodeLensParams(new TextDocumentIdentifier(info.getFileUri().toString()));
+		@Nullable
+		LanguageServer languageClient = info.getLanguageClient();
+		if (languageClient == null) {
+			return;
+		}
+		final CompletableFuture<List<? extends CodeLens>> codeLens = languageClient.getTextDocumentService().codeLens(param);
 		codeLens.whenComplete(new BiConsumer<List<? extends CodeLens>, Throwable>() {
 
 			@Override

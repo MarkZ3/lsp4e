@@ -18,6 +18,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
@@ -31,6 +32,7 @@ import org.eclipse.lsp4e.LanguageServiceAccessor;
 import org.eclipse.lsp4e.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.lsp4e.ui.Messages;
 import org.eclipse.lsp4j.Location;
+import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 
@@ -73,24 +75,28 @@ public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector 
 	public IHyperlink[] detectHyperlinks(ITextViewer textViewer, IRegion region, boolean canShowMultipleHyperlinks) {
 		final LSPDocumentInfo info = LanguageServiceAccessor.getLSPDocumentInfoFor(textViewer, (capabilities) -> Boolean.TRUE.equals(capabilities.getDefinitionProvider()));
 		if (info != null) {
-			try {
-				CompletableFuture<List<? extends Location>> documentHighlight = info.getLanguageClient().getTextDocumentService()
-						.definition(LSPEclipseUtils.toTextDocumentPosistionParams(info.getFileUri(), region.getOffset(), info.getDocument()));
-				List<? extends Location> locations = documentHighlight.get(2, TimeUnit.SECONDS);
-				if (locations == null || locations.isEmpty()) {
-					return null;
+			@Nullable
+			LanguageServer languageClient = info.getLanguageClient();
+			if (languageClient != null) {
+				try {
+					CompletableFuture<List<? extends Location>> documentHighlight = languageClient.getTextDocumentService()
+							.definition(LSPEclipseUtils.toTextDocumentPosistionParams(info.getFileUri(), region.getOffset(), info.getDocument()));
+					List<? extends Location> locations = documentHighlight.get(2, TimeUnit.SECONDS);
+					if (locations == null || locations.isEmpty()) {
+						return null;
+					}
+					IRegion linkRegion = findWord(textViewer.getDocument(), region.getOffset());
+					if (linkRegion == null) {
+						linkRegion = region;
+					}
+					List<IHyperlink> hyperlinks = new ArrayList<IHyperlink>(locations.size());
+					for (Location responseLocation : locations) {
+						hyperlinks.add(new LSBasedHyperlink(responseLocation, linkRegion));
+					}
+					return hyperlinks.toArray(new IHyperlink[hyperlinks.size()]);
+				} catch (BadLocationException | InterruptedException | ExecutionException | TimeoutException e) {
+					LanguageServerPlugin.logError(e);
 				}
-				IRegion linkRegion = findWord(textViewer.getDocument(), region.getOffset());
-				if (linkRegion == null) {
-					linkRegion = region;
-				}
-				List<IHyperlink> hyperlinks = new ArrayList<IHyperlink>(locations.size());
-				for (Location responseLocation : locations) {
-					hyperlinks.add(new LSBasedHyperlink(responseLocation, linkRegion));
-				}
-				return hyperlinks.toArray(new IHyperlink[hyperlinks.size()]);
-			} catch (BadLocationException | InterruptedException | ExecutionException | TimeoutException e) {
-				LanguageServerPlugin.logError(e);
 			}
 		}
 		return null;

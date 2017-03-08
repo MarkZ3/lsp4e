@@ -18,6 +18,7 @@ import java.util.function.BiConsumer;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jface.action.ContributionItem;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.ITextSelection;
@@ -30,6 +31,7 @@ import org.eclipse.lsp4j.CodeActionParams;
 import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
@@ -75,14 +77,20 @@ public class LSPCodeActionsMenu extends ContributionItem implements IWorkbenchCo
 			item.setText(Messages.notImplemented);
 			return;
 		}
-		
+
 		item.setText(Messages.computing);
 		CodeActionContext context = new CodeActionContext(Collections.emptyList());
 		CodeActionParams params = new CodeActionParams();
 		params.setTextDocument(new TextDocumentIdentifier(info.getFileUri().toString()));
 		params.setRange(this.range);
 		params.setContext(context);
-		final CompletableFuture<List<? extends Command>> codeActions = info.getLanguageClient().getTextDocumentService().codeAction(params);
+		@Nullable
+		LanguageServer languageClient = info.getLanguageClient();
+		if (languageClient == null) {
+			return;
+		}
+
+		final CompletableFuture<List<? extends Command>> codeActions = languageClient.getTextDocumentService().codeAction(params);
 		codeActions.whenComplete(new BiConsumer<List<? extends Command>, Throwable>() {
 
 			@Override

@@ -16,12 +16,14 @@ import java.util.concurrent.CompletableFuture;
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.lsp4e.LSPEclipseUtils;
 import org.eclipse.lsp4e.LanguageServiceAccessor;
 import org.eclipse.lsp4e.LanguageServiceAccessor.LSPDocumentInfo;
 import org.eclipse.lsp4j.DocumentSymbolParams;
 import org.eclipse.lsp4j.SymbolInformation;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.handlers.HandlerUtil;
@@ -40,9 +42,14 @@ public class LSPSymbolInFileHandler extends AbstractHandler {
 			if (info == null) {
 				return null;
 			}
+			@Nullable
+			LanguageServer languageClient = info.getLanguageClient();
+			if (languageClient == null) {
+				return languageClient;
+			}
 			final Shell shell = HandlerUtil.getActiveShell(event);
 			DocumentSymbolParams params = new DocumentSymbolParams(new TextDocumentIdentifier(info.getFileUri().toString()));
-			CompletableFuture<List<? extends SymbolInformation>> symbols = info.getLanguageClient()
+			CompletableFuture<List<? extends SymbolInformation>> symbols = languageClient
 			        .getTextDocumentService().documentSymbol(params);
 
 			symbols.thenAccept((List<? extends SymbolInformation> t) -> {

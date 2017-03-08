@@ -35,8 +35,8 @@ import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextViewer;
-import org.eclipse.lsp4e.server.StreamConnectionProvider;
 import org.eclipse.lsp4e.LSPStreamConnectionProviderRegistry.StreamConnectionInfo;
+import org.eclipse.lsp4e.server.StreamConnectionProvider;
 import org.eclipse.lsp4j.ServerCapabilities;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.services.LanguageServer;
@@ -121,7 +121,7 @@ public class LanguageServiceAccessor {
 			return this.fileUri;
 		}
 
-		public @NonNull LanguageServer getLanguageClient() {
+		public @Nullable LanguageServer getLanguageClient() {
 			return this.wrapper.getServer();
 		}
 
@@ -286,10 +286,16 @@ public class LanguageServiceAccessor {
 			WrapperEntryKey wrapperEntryKey = entry.getKey();
 			if (project.equals(wrapperEntryKey.project)) {
 				for (ProjectSpecificLanguageServerWrapper wrapper : entry.getValue()) {
+					@Nullable
+					LanguageServer server = wrapper.getServer();
+					if (server == null) {
+						continue;
+					}
+
 					if ((request == null
 						|| wrapper.getServerCapabilities() == null /* null check is workaround for https://github.com/TypeFox/ls-api/issues/47 */
 					    || request.test(wrapper.getServerCapabilities()))) {
-						serverInfos.add(new LSPServerInfo(project, wrapper.getServer(), wrapper.getServerCapabilities()));
+						serverInfos.add(new LSPServerInfo(project, server, wrapper.getServerCapabilities()));
 					}
 				}
 			}
