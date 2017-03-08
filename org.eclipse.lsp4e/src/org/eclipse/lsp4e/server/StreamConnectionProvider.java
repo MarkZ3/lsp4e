@@ -42,6 +42,13 @@ public interface StreamConnectionProvider {
 	public OutputStream getOutputStream();
 
 	/**
+	 * Can be overridden for cases when the provider determines itself to be unusable.
+	 */
+	public default boolean isValid() {
+		return true;
+	}
+
+	/**
      * User provided initialization options.
      */
 	public default Object getInitializationOptions(URI rootUri){
