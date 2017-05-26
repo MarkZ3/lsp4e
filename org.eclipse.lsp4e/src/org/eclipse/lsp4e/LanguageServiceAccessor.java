@@ -176,6 +176,19 @@ public class LanguageServiceAccessor {
 		return res;
 	}
 
+	/**
+	 * Returns whether or not a language server definition is associated with a
+	 * project.
+	 *
+	 * @param project
+	 * @param serverDefinition
+	 * @return
+	 * @throws IOException
+	 */
+	public static boolean isServerInstanceAssociated(@NonNull IProject project,
+			@NonNull LanguageServerDefinition serverDefinition) throws IOException {
+		return getLSWrapperForConnection(project, serverDefinition, false) != null;
+	}
 
 	/**
 	 * Return existing {@link ProjectSpecificLanguageServerWrapper} for the given connection. If not found,
@@ -186,6 +199,20 @@ public class LanguageServiceAccessor {
 	 * @throws IOException
 	 */
 	public static ProjectSpecificLanguageServerWrapper getLSWrapperForConnection(@NonNull IProject project, @NonNull LanguageServerDefinition serverDefinition) throws IOException {
+		return getLSWrapperForConnection(project, serverDefinition, true);
+	}
+
+	/**
+	 * Return existing {@link ProjectSpecificLanguageServerWrapper} for the given connection. If not found,
+	 * optionally create a new one with the given connection and register it for this project/content-type.
+	 * @param project
+	 * @param serverDefinition
+	 * @param create whether or not to create a new wrapper if it is not found
+	 * @return
+	 * @throws IOException
+	 */
+	private static ProjectSpecificLanguageServerWrapper getLSWrapperForConnection(@NonNull IProject project,
+			@NonNull LanguageServerDefinition serverDefinition, boolean create) throws IOException {
 		ProjectSpecificLanguageServerWrapper wrapper = null;
 
 		synchronized(projectServers) {
@@ -195,13 +222,15 @@ public class LanguageServiceAccessor {
 					break;
 				}
 			}
-			if (wrapper == null) {
-				wrapper = new ProjectSpecificLanguageServerWrapper(project, serverDefinition);
-				wrapper.start();
-			}
+			if (create) {
+				if (wrapper == null) {
+					wrapper = new ProjectSpecificLanguageServerWrapper(project, serverDefinition);
+					wrapper.start();
+				}
 
-			if (wrapper != null) {
-				projectServers.add(wrapper);
+				if (wrapper != null) {
+					projectServers.add(wrapper);
+				}
 			}
 		}
 		return wrapper;
