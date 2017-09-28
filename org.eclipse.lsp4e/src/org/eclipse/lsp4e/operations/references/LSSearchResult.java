@@ -55,7 +55,7 @@ public class LSSearchResult extends FileSearchResult {
 			textResult.removeAll();
 
 			try {
-				for (Location loc : references.get(4, TimeUnit.SECONDS)) {
+				for (Location loc : references.get(40, TimeUnit.SECONDS)) {
 					Match match = toMatch(loc, monitor);
 					addMatch(match);
 				}
