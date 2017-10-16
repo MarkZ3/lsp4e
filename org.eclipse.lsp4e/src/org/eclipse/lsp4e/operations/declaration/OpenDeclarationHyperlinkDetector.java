@@ -76,7 +76,7 @@ public class OpenDeclarationHyperlinkDetector extends AbstractHyperlinkDetector 
 			try {
 				CompletableFuture<List<? extends Location>> documentHighlight = info.getLanguageClient().getTextDocumentService()
 						.definition(LSPEclipseUtils.toTextDocumentPosistionParams(info.getFileUri(), region.getOffset(), info.getDocument()));
-				List<? extends Location> locations = documentHighlight.get(2, TimeUnit.SECONDS);
+				List<? extends Location> locations = documentHighlight.get(20, TimeUnit.SECONDS);
 				if (locations == null || locations.isEmpty()) {
 					continue;
 				}
